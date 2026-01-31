@@ -1,5 +1,5 @@
 "use server";
-import { prisma } from "@/db/prisma";
+import prisma from "@/lib/prisma";
 import { convertToPlainObject } from "../utils";
 
 export async function getLatestProducts() {
