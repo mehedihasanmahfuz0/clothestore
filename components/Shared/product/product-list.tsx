@@ -6,7 +6,7 @@ const ProductList = ({
   title,
   limit,
 }: {
-  data: Product[];
+  data: any;
   title?: string;
   limit?: number;
 }) => {
