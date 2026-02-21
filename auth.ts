@@ -25,21 +25,18 @@ export const config = {
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        // Find user in database
         const user = await prisma.user.findFirst({
           where: {
             email: credentials.email as string,
           },
         });
 
-        // Check if user exists and password is correct
         if (user && user.password) {
           const isMatch = compareSync(
             credentials.password as string,
             user.password,
           );
 
-          // If password is correct, return user object
           if (isMatch) {
             return {
               id: user.id,
@@ -50,23 +47,19 @@ export const config = {
           }
         }
 
-        // If user doesn't exist or password is incorrect, return null
         return null;
       },
     }),
   ],
   callbacks: {
     async jwt({ token, user, trigger, session }) {
-      // Assign user fields to token on sign in
       if (user) {
         token.id = user.id;
-        token.role = user.role;
+        token.role = (user as any).role;
 
-        // If user has no name, use email as their default name
         if (user.name === "NO_NAME") {
           token.name = user.email!.split("@")[0];
 
-          // Update the user in the database with the new name
           await prisma.user.update({
             where: { id: user.id },
             data: { name: token.name },
@@ -74,7 +67,6 @@ export const config = {
         }
       }
 
-      // Handle session updates (e.g., name change)
       if (trigger === "update" && session?.user?.name) {
         token.name = session.user.name;
       }
@@ -82,7 +74,6 @@ export const config = {
       return token;
     },
     async session({ session, token }) {
-      // Map the token data to the session object
       if (token) {
         session.user.id = token.id as string;
         session.user.name = token.name as string;
