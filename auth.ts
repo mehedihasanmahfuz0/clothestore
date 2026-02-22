@@ -54,15 +54,15 @@ export const config = {
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       if (user) {
-        token.id = user.id as string;
-        token.role = user.role; // ← No more (user as any)
+        token.id = user.id;
+        token.role = user.role ?? "user";
 
         if (user.name === "NO_NAME") {
-          token.name = user.email!.split("@")[0];
+          token.name = (user.email ?? "").split("@")[0];
 
           await prisma.user.update({
-            where: { id: user.id },
-            data: { name: token.name as string },
+            where: { id: user.id as string },
+            data: { name: token.name },
           });
         }
       }
@@ -75,9 +75,9 @@ export const config = {
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.id!;
-        session.user.name = token.name as string;
-        session.user.role = token.role;
+        session.user.id = (token.id as string) ?? "";
+        session.user.name = (token.name as string) ?? "";
+        session.user.role = (token.role as string) ?? "user";
       }
 
       return session;
