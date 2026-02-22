@@ -42,3 +42,8 @@ export type Session = Prisma.SessionModel
  * 
  */
 export type VerificationToken = Prisma.VerificationTokenModel
+/**
+ * Model Cart
+ * 
+ */
+export type Cart = Prisma.CartModel
