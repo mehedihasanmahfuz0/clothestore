@@ -6,7 +6,9 @@ import {
   signInFormSchema,
   signUpFormSchema,
   shippingAddressSchema, // ✅ NEW
+  paymentMethodSchema, // ✅ NEW
 } from "../validator";
+import { z } from "zod"; // ✅ NEW
 import { hashSync } from "bcrypt-ts-edge";
 import { prisma } from "@/db/prisma";
 import { formatError } from "../utils";
@@ -121,6 +123,37 @@ export async function updateUserAddress(data: ShippingAddress) {
     await prisma.user.update({
       where: { id: currentUser.id },
       data: { address },
+    });
+
+    return {
+      success: true,
+      message: "User updated successfully",
+    };
+  } catch (error) {
+    return { success: false, message: formatError(error) };
+  }
+}
+
+// ✅ NEW: Update user's payment method
+export async function updateUserPaymentMethod(
+  data: z.infer<typeof paymentMethodSchema>,
+) {
+  try {
+    const session = await auth();
+
+    const userId = session?.user?.id;
+    if (!userId) throw new Error("User not authenticated");
+
+    const currentUser = await prisma.user.findFirst({
+      where: { id: userId },
+    });
+    if (!currentUser) throw new Error("User not found");
+
+    const paymentMethod = paymentMethodSchema.parse(data);
+
+    await prisma.user.update({
+      where: { id: currentUser.id },
+      data: { paymentMethod: paymentMethod.type },
     });
 
     return {
