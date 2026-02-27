@@ -19,19 +19,16 @@ export function formatNumberWithDecimal(num: number): string {
 import { ZodError } from "zod";
 
 export function formatError(error: any): string {
-  // Handle Zod validation errors
   if (error instanceof ZodError) {
     const fieldErrors = error.issues.map((issue) => issue.message);
     return fieldErrors.join(". ");
   }
 
-  // Handle Prisma unique constraint errors
   if (error.code === "P2002") {
     const field = error.meta?.target ? error.meta.target[0] : "email";
     return `${field.charAt(0).toUpperCase() + field.slice(1)} already exists`;
   }
 
-  // Handle other errors
   if (error instanceof Error) {
     return error.message;
   }
@@ -47,5 +44,22 @@ export function round2(value: number | string) {
     return Math.round((Number(value) + Number.EPSILON) * 100) / 100;
   } else {
     throw new Error("Value is not a number or string");
+  }
+}
+
+// Format currency
+const CURRENCY_FORMATTER = new Intl.NumberFormat("en-US", {
+  currency: "USD",
+  style: "currency",
+  minimumFractionDigits: 2,
+});
+
+export function formatCurrency(amount: number | string | null) {
+  if (typeof amount === "number") {
+    return CURRENCY_FORMATTER.format(amount);
+  } else if (typeof amount === "string") {
+    return CURRENCY_FORMATTER.format(Number(amount));
+  } else {
+    return "NaN";
   }
 }
