@@ -7,12 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
     "@hookform/resolvers": "^3.9.0",
     "@neondatabase/serverless": "^1.0.2",
+    "@paypal/react-paypal-js": "^9.0.0",
     "@prisma/adapter-neon": "^7.3.0",
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/config": "^7.3.0",
@@ -46,6 +49,7 @@
     "@eslint/eslintrc": "^3",
     "@prisma/client": "^7.3.0",
     "@tailwindcss/postcss": "^4.1.13",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/pg": "^8.16.0",
     "@types/react": "^19",
@@ -54,8 +58,11 @@
     "bufferutil": "^4.1.0",
     "eslint": "^9",
     "eslint-config-next": "15.5.3",
+    "jest": "^30.2.0",
     "prisma": "^7.3.0",
     "tailwindcss": "^4.1.13",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "tw-animate-css": "^1.3.8",
     "typescript": "5.9.3"
