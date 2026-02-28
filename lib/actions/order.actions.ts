@@ -8,7 +8,8 @@ import { getUserById } from "./user.actions";
 import { insertOrderSchema } from "../validator";
 import { prisma } from "@/db/prisma";
 import { CartItem, PaymentResult } from "@/types"; // ✅ PaymentResult added
-import { paypal } from "../paypal"; // ✅ NEW
+import { paypal } from "../paypal";
+import { PAGE_SIZE } from "../constants"; // ✅ NEW
 
 // Create an order in the database
 export async function createOrder() {
@@ -205,4 +206,36 @@ export async function getOrderById(orderId: string) {
       user: { select: { name: true, email: true } },
     },
   });
+}
+
+// ✅ NEW: Get paginated orders for the current user
+export async function getMyOrders({
+  limit = PAGE_SIZE,
+  page,
+}: {
+  limit?: number;
+  page: number;
+}) {
+  const session = await auth();
+  if (!session) throw new Error("User is not authenticated");
+
+  // ✅ guard instead of non-null assertion
+  const userId = session?.user?.id;
+  if (!userId) throw new Error("User not found");
+
+  const data = await prisma.order.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    skip: (page - 1) * limit,
+  });
+
+  const dataCount = await prisma.order.count({
+    where: { userId },
+  });
+
+  return {
+    data,
+    totalPages: Math.ceil(dataCount / limit),
+  };
 }

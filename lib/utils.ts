@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import qs from "query-string"; // ✅ NEW
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -62,4 +63,53 @@ export function formatCurrency(amount: number | string | null) {
   } else {
     return "NaN";
   }
+}
+
+// ✅ NEW: Format date and time
+const DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  year: "numeric",
+  day: "numeric",
+});
+
+const DATE_TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  month: "short",
+  year: "numeric",
+  day: "numeric",
+  hour: "numeric",
+  minute: "numeric",
+});
+
+export function formatDateTime(date: Date) {
+  return {
+    dateTime: DATE_TIME_FORMATTER.format(date),
+    dateOnly: DATE_FORMATTER.format(date),
+  };
+}
+
+// ✅ NEW: Shorten UUID for display (last 6 chars)
+export function formatId(id: string) {
+  return `..${id.substring(id.length - 6)}`;
+}
+
+// ✅ NEW: Build paginated URL query string
+export function formUrlQuery({
+  params,
+  key,
+  value,
+}: {
+  params: string;
+  key: string;
+  value: string | null;
+}) {
+  const query = qs.parse(params);
+  query[key] = value;
+
+  return qs.stringifyUrl(
+    {
+      url: window.location.pathname,
+      query,
+    },
+    { skipNull: true },
+  );
 }

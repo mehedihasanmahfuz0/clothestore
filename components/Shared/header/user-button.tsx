@@ -18,6 +18,7 @@ const UserButton = async () => {
         <Button>Sign In</Button>
       </Link>
     );
+
   const firstInitial = session.user?.name?.charAt(0).toUpperCase() ?? "";
 
   return (
@@ -44,6 +45,18 @@ const UserButton = async () => {
               </p>
             </div>
           </DropdownMenuLabel>
+
+          {/* ✅ asChild lets DropdownMenuItem render as Link directly */}
+          <DropdownMenuItem asChild>
+            <Link className="w-full cursor-pointer" href="/user/profile">
+              User Profile
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link className="w-full cursor-pointer" href="/user/orders">
+              Order History
+            </Link>
+          </DropdownMenuItem>
 
           <DropdownMenuItem className="p-0 mb-1">
             <form action={signOutUser} className="w-full">
