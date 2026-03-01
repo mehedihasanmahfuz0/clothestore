@@ -113,3 +113,9 @@ export function formUrlQuery({
     { skipNull: true },
   );
 }
+
+// ✅ NEW: Format numbers with commas (e.g. 1000 → 1,000)
+const NUMBER_FORMATTER = new Intl.NumberFormat("en-US");
+export function formatNumber(number: number) {
+  return NUMBER_FORMATTER.format(number);
+}

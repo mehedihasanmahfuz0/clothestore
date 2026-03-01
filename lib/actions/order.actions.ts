@@ -7,6 +7,7 @@ import { getMyCart } from "./cart.actions";
 import { getUserById } from "./user.actions";
 import { insertOrderSchema } from "../validator";
 import { prisma } from "@/db/prisma";
+import { Prisma } from "@/generated/prisma/client"; // ✅ needed for raw query types
 import { CartItem, PaymentResult } from "@/types"; // ✅ PaymentResult added
 import { paypal } from "../paypal";
 import { PAGE_SIZE } from "../constants"; // ✅ NEW
@@ -237,5 +238,53 @@ export async function getMyOrders({
   return {
     data,
     totalPages: Math.ceil(dataCount / limit),
+  };
+}
+
+// ✅ NEW: Sales data type for chart
+type SalesDataType = {
+  month: string;
+  totalSales: number;
+}[];
+
+// ✅ NEW: Get order summary for admin dashboard
+export async function getOrderSummary() {
+  // Total counts
+  const ordersCount = await prisma.order.count();
+  const productsCount = await prisma.product.count();
+  const usersCount = await prisma.user.count();
+
+  // Sum of all order totals
+  const totalSales = await prisma.order.aggregate({
+    _sum: { totalPrice: true },
+  });
+
+  // Monthly sales grouped by MM/YY using raw SQL
+  // (Prisma doesn't support date grouping natively)
+  const salesDataRaw = await prisma.$queryRaw<
+    Array<{ month: string; totalSales: Prisma.Decimal }>
+  >`SELECT to_char("createdAt", 'MM/YY') as "month", sum("totalPrice") as "totalSales" FROM "Order" GROUP BY to_char("createdAt", 'MM/YY')`;
+
+  const salesData: SalesDataType = salesDataRaw.map((entry) => ({
+    month: entry.month,
+    totalSales: Number(entry.totalSales),
+  }));
+
+  // Latest 6 orders with buyer name
+  const latestOrders = await prisma.order.findMany({
+    orderBy: { createdAt: "desc" },
+    include: {
+      user: { select: { name: true } },
+    },
+    take: 6,
+  });
+
+  return {
+    ordersCount,
+    productsCount,
+    usersCount,
+    totalSales,
+    latestOrders,
+    salesData,
   };
 }

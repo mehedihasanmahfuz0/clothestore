@@ -46,7 +46,6 @@ const UserButton = async () => {
             </div>
           </DropdownMenuLabel>
 
-          {/* ✅ asChild lets DropdownMenuItem render as Link directly */}
           <DropdownMenuItem asChild>
             <Link className="w-full cursor-pointer" href="/user/profile">
               User Profile
@@ -57,6 +56,15 @@ const UserButton = async () => {
               Order History
             </Link>
           </DropdownMenuItem>
+
+          {/* ✅ NEW: Only visible to admin users */}
+          {session.user.role === "admin" && (
+            <DropdownMenuItem asChild>
+              <Link className="w-full cursor-pointer" href="/admin/overview">
+                Admin
+              </Link>
+            </DropdownMenuItem>
+          )}
 
           <DropdownMenuItem className="p-0 mb-1">
             <form action={signOutUser} className="w-full">
