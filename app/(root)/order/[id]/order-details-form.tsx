@@ -2,13 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { toast } from "sonner"; // ✅ sonner instead of useToast
+import { useTransition } from "react";
+import { toast } from "sonner";
 import {
   PayPalButtons,
   PayPalScriptProvider,
   usePayPalScriptReducer,
 } from "@paypal/react-paypal-js";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -22,14 +24,18 @@ import { Order, ShippingAddress } from "@/types";
 import {
   approvePayPalOrder,
   createPayPalOrder,
+  deliverOrder,
+  updateOrderToPaidByCOD,
 } from "@/lib/actions/order.actions";
 
 const OrderDetailsForm = ({
   order,
   paypalClientId,
+  isAdmin,
 }: {
   order: Order;
   paypalClientId: string;
+  isAdmin: boolean;
 }) => {
   const {
     shippingAddress,
@@ -45,8 +51,6 @@ const OrderDetailsForm = ({
     deliveredAt,
   } = order;
 
-  // ── PayPal loading state indicator ──────────────────────────────────────
-  // Must be a child of PayPalScriptProvider to use usePayPalScriptReducer
   function PrintLoadingState() {
     const [{ isPending, isRejected }] = usePayPalScriptReducer();
     if (isPending) return <p>Loading PayPal...</p>;
@@ -54,31 +58,61 @@ const OrderDetailsForm = ({
     return null;
   }
 
-  // ── Step 1: Create the PayPal order and return its ID to the SDK ─────────
   const handleCreatePayPalOrder = async () => {
     const res = await createPayPalOrder(order.id);
     if (!res.success) {
-      toast.error(res.message); // ✅ sonner
+      toast.error(res.message);
       return;
     }
     return res.data;
   };
 
-  // ── Step 2: Capture payment after buyer approves in the PayPal popup ────
   const handleApprovePayPalOrder = async (data: { orderID: string }) => {
     const res = await approvePayPalOrder(order.id, data);
-    if (res.success) {
-      toast.success(res.message); // ✅ sonner
-    } else {
-      toast.error(res.message);
-    }
+    res.success ? toast.success(res.message) : toast.error(res.message);
+  };
+
+  // ✅ Admin button: mark COD order as paid
+  const MarkAsPaidButton = () => {
+    const [isPending, startTransition] = useTransition();
+    return (
+      <Button
+        type="button"
+        disabled={isPending}
+        onClick={() =>
+          startTransition(async () => {
+            const res = await updateOrderToPaidByCOD(order.id);
+            res.success ? toast.success(res.message) : toast.error(res.message);
+          })
+        }
+      >
+        {isPending ? "Processing..." : "Mark As Paid"}
+      </Button>
+    );
+  };
+
+  // ✅ Admin button: mark paid order as delivered
+  const MarkAsDeliveredButton = () => {
+    const [isPending, startTransition] = useTransition();
+    return (
+      <Button
+        type="button"
+        disabled={isPending}
+        onClick={() =>
+          startTransition(async () => {
+            const res = await deliverOrder(order.id);
+            res.success ? toast.success(res.message) : toast.error(res.message);
+          })
+        }
+      >
+        {isPending ? "Processing..." : "Mark As Delivered"}
+      </Button>
+    );
   };
 
   return (
     <div className="grid md:grid-cols-3 md:gap-5">
-      {/* ── Left column: address, payment, items ── */}
       <div className="overflow-x-auto md:col-span-2 space-y-4">
-        {/* Shipping Address */}
         <Card>
           <CardContent className="p-4 gap-4">
             <h2 className="text-xl pb-4">Shipping Address</h2>
@@ -101,7 +135,6 @@ const OrderDetailsForm = ({
           </CardContent>
         </Card>
 
-        {/* Payment Method */}
         <Card>
           <CardContent className="p-4 gap-4">
             <h2 className="text-xl pb-4">Payment Method</h2>
@@ -118,7 +151,6 @@ const OrderDetailsForm = ({
           </CardContent>
         </Card>
 
-        {/* Order Items */}
         <Card>
           <CardContent className="p-4 gap-4">
             <h2 className="text-xl pb-4">Order Items</h2>
@@ -159,7 +191,6 @@ const OrderDetailsForm = ({
         </Card>
       </div>
 
-      {/* ── Right column: price summary + PayPal button ── */}
       <div>
         <Card>
           <CardContent className="p-4 gap-4 space-y-4">
@@ -180,7 +211,7 @@ const OrderDetailsForm = ({
               <div>{formatCurrency(totalPrice)}</div>
             </div>
 
-            {/* PayPal button — only shown if unpaid and method is PayPal */}
+            {/* PayPal */}
             {!isPaid && paymentMethod === "PayPal" && (
               <div>
                 <PayPalScriptProvider options={{ clientId: paypalClientId }}>
@@ -192,6 +223,14 @@ const OrderDetailsForm = ({
                 </PayPalScriptProvider>
               </div>
             )}
+
+            {/* Admin: Cash on Delivery */}
+            {isAdmin && !isPaid && paymentMethod === "CashOnDelivery" && (
+              <MarkAsPaidButton />
+            )}
+
+            {/* Admin: Mark delivered */}
+            {isAdmin && isPaid && !isDelivered && <MarkAsDeliveredButton />}
           </CardContent>
         </Card>
       </div>

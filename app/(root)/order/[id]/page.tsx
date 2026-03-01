@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { auth } from "@/auth";
 import { getOrderById } from "@/lib/actions/order.actions";
 import OrderDetailsForm from "./order-details-form";
 import { ShippingAddress } from "@/types";
@@ -13,23 +14,24 @@ const OrderDetailsPage = async (props: { params: Promise<{ id: string }> }) => {
   const order = await getOrderById(id);
   if (!order) notFound();
 
+  const session = await auth();
+
   return (
     <OrderDetailsForm
       order={{
         ...order,
-        // Convert top-level Decimal fields → string to match Order type
         itemsPrice: order.itemsPrice.toString(),
         shippingPrice: order.shippingPrice.toString(),
         taxPrice: order.taxPrice.toString(),
         totalPrice: order.totalPrice.toString(),
         shippingAddress: order.shippingAddress as ShippingAddress,
-        // Convert each orderItem's price Decimal → string
         orderItems: order.orderItems.map((item) => ({
           ...item,
           price: item.price.toString(),
         })),
       }}
       paypalClientId={process.env.PAYPAL_CLIENT_ID || "sb"}
+      isAdmin={session?.user?.role === "admin" || false} // ✅ NEW
     />
   );
 };
