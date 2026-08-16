@@ -7,6 +7,7 @@ import {
   signUpFormSchema,
   shippingAddressSchema, // ✅ NEW
   paymentMethodSchema, // ✅ NEW
+  updateUserSchema, // ✅ NEW
 } from "../validator";
 import { z } from "zod"; // ✅ NEW
 import { hashSync } from "bcrypt-ts-edge";
@@ -14,6 +15,8 @@ import { prisma } from "@/db/prisma";
 import { formatError } from "../utils";
 import { ZodError } from "zod";
 import { ShippingAddress } from "@/types"; // ✅ NEW
+import { PAGE_SIZE } from "../constants"; // ✅ NEW
+import { revalidatePath } from "next/cache"; // ✅ NEW
 
 // Sign in the user with credentials
 export async function signInWithCredentials(
@@ -183,6 +186,83 @@ export async function updateProfile(user: { name: string; email: string }) {
       where: { id: currentUser.id },
       data: { name: user.name },
     });
+
+    return {
+      success: true,
+      message: "User updated successfully",
+    };
+  } catch (error) {
+    return { success: false, message: formatError(error) };
+  }
+}
+
+// ✅ NEW: Get all users (admin) with search
+export async function getAllUsers({
+  limit = PAGE_SIZE,
+  page,
+  query,
+}: {
+  limit?: number;
+  page: number;
+  query: string;
+}) {
+  const queryFilter =
+    query && query !== "all"
+      ? {
+          name: {
+            contains: query,
+            mode: "insensitive" as const,
+          },
+        }
+      : {};
+
+  const data = await prisma.user.findMany({
+    where: queryFilter,
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    skip: (page - 1) * limit,
+  });
+
+  const dataCount = await prisma.user.count({
+    where: queryFilter,
+  });
+
+  return {
+    data,
+    totalPages: Math.ceil(dataCount / limit),
+  };
+}
+
+// ✅ NEW: Delete user (admin)
+export async function deleteUser(id: string) {
+  try {
+    await prisma.user.delete({ where: { id } });
+
+    revalidatePath("/admin/users");
+
+    return {
+      success: true,
+      message: "User deleted successfully",
+    };
+  } catch (error) {
+    return { success: false, message: formatError(error) };
+  }
+}
+
+// ✅ NEW: Update user (admin)
+export async function updateUser(user: z.infer<typeof updateUserSchema>) {
+  try {
+    const parsed = updateUserSchema.parse(user);
+
+    await prisma.user.update({
+      where: { id: parsed.id },
+      data: {
+        name: parsed.name,
+        role: parsed.role,
+      },
+    });
+
+    revalidatePath("/admin/users");
 
     return {
       success: true,

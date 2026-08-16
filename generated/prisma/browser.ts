@@ -53,6 +53,11 @@ export type Cart = Prisma.CartModel
  */
 export type Order = Prisma.OrderModel
 /**
+ * Model Review
+ * 
+ */
+export type Review = Prisma.ReviewModel
+/**
  * Model OrderItem
  * 
  */

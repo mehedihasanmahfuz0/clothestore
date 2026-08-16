@@ -33,3 +33,35 @@ export const DEFAULT_PAYMENT_METHOD =
 
 // ✅ NEW: Pagination page size
 export const PAGE_SIZE = Number(process.env.PAGE_SIZE) || 10;
+
+// ✅ NEW: Product form default values
+export const productDefaultValues = {
+  name: "",
+  slug: "",
+  category: "",
+  images: [] as string[],
+  brand: "",
+  description: "",
+  price: "0",
+  stock: 0,
+  rating: "0",
+  numReviews: "0",
+  isFeatured: false,
+  banner: null as string | null,
+};
+
+// ✅ NEW: User roles
+export const USER_ROLES = process.env.USER_ROLES
+  ? process.env.USER_ROLES.split(", ")
+  : ["admin", "user"];
+
+// ✅ NEW: Review form default values
+export const reviewFormDefaultValues = {
+  title: "",
+  description: "",
+  rating: 0,
+};
+
+// ✅ NEW: Email sender address
+export const SENDER_EMAIL =
+  process.env.SENDER_EMAIL || "onboarding@resend.dev";

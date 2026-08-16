@@ -8,9 +8,10 @@ import { getUserById } from "./user.actions";
 import { insertOrderSchema } from "../validator";
 import { prisma } from "@/db/prisma";
 import { Prisma } from "@/generated/prisma/client"; // ✅ needed for raw query types
-import { CartItem, PaymentResult } from "@/types"; // ✅ PaymentResult added
+import { CartItem, PaymentResult, ShippingAddress } from "@/types"; // ✅ ShippingAddress added
 import { paypal } from "../paypal";
 import { PAGE_SIZE } from "../constants"; // ✅ NEW
+import { sendPurchaseReceipt } from "@/email"; // ✅ NEW
 
 // Create an order in the database
 export async function createOrder() {
@@ -167,7 +168,7 @@ export async function approvePayPalOrder(
 }
 
 // ✅ NEW: Marks order as paid and decrements product stock — internal only (not exported)
-async function updateOrderToPaid({
+export async function updateOrderToPaid({
   orderId,
   paymentResult,
 }: {
@@ -195,6 +196,38 @@ async function updateOrderToPaid({
       where: { id: orderId },
       data: { isPaid: true, paidAt: new Date(), paymentResult },
     });
+  });
+
+  // ✅ NEW: Get the updated order after the transaction
+  const updatedOrder = await prisma.order.findFirst({
+    where: {
+      id: orderId,
+    },
+    include: {
+      orderItems: true,
+      user: { select: { name: true, email: true } },
+    },
+  });
+
+  if (!updatedOrder) {
+    throw new Error("Order not found");
+  }
+
+  // ✅ NEW: Send the purchase receipt email with the updated order
+  sendPurchaseReceipt({
+    order: {
+      ...updatedOrder,
+      itemsPrice: updatedOrder.itemsPrice.toString(),
+      shippingPrice: updatedOrder.shippingPrice.toString(),
+      taxPrice: updatedOrder.taxPrice.toString(),
+      totalPrice: updatedOrder.totalPrice.toString(),
+      orderItems: updatedOrder.orderItems.map((item) => ({
+        ...item,
+        price: item.price.toString(),
+      })),
+      shippingAddress: updatedOrder.shippingAddress as ShippingAddress,
+      paymentResult: updatedOrder.paymentResult as PaymentResult,
+    },
   });
 }
 
@@ -293,18 +326,35 @@ export async function getOrderSummary() {
 export async function getAllOrders({
   limit = PAGE_SIZE,
   page,
+  query,
 }: {
   limit?: number;
   page: number;
+  query: string;
 }) {
+  const queryFilter =
+    query && query !== "all"
+      ? {
+          user: {
+            name: {
+              contains: query,
+              mode: "insensitive" as const,
+            },
+          },
+        }
+      : {};
+
   const data = await prisma.order.findMany({
+    where: queryFilter,
+    include: { user: { select: { name: true } } },
     orderBy: { createdAt: "desc" },
     take: limit,
     skip: (page - 1) * limit,
-    include: { user: { select: { name: true } } },
   });
 
-  const dataCount = await prisma.order.count();
+  const dataCount = await prisma.order.count({
+    where: queryFilter,
+  });
 
   return {
     data,
