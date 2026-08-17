@@ -8,6 +8,7 @@ import { prisma } from "@/db/prisma";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 
 export const config = {
+  trustHost: true,
   pages: {
     signIn: "/sign-in",
     error: "/sign-in",
