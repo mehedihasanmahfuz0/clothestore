@@ -1,0 +1,6 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "DEFAULT_PAYMENT_METHOD,PAYPAL_API_URL,SENDER_EMAIL,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
