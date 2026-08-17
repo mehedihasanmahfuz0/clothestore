@@ -30,6 +30,10 @@
   .h3-bold {
     @apply font-bold text-xl lg:text-2xl;
   }
+
+  .link {
+    @apply font-medium text-primary underline underline-offset-4;
+  }
 }
 
 @theme inline {

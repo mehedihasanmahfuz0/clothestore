@@ -11,7 +11,7 @@ const ProductCard = ({ product }: { product: Product }) => {
   }
   return (
     <>
-      <Card className="w-ful max-w-sm">
+      <Card className="w-full max-w-sm">
         <CardHeader className="p-0 items-center">
           <Link href={`/product/${product.slug}`}>
             <Image
@@ -19,6 +19,7 @@ const ProductCard = ({ product }: { product: Product }) => {
               alt={product.name || "Product image"}
               width={300}
               height={300}
+              className="aspect-square object-cover rounded-sm"
             />
           </Link>
         </CardHeader>
