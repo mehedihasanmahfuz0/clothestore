@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { updateOrderToPaid } from "@/lib/actions/order.actions";
 
-// Initialize Stripe with the secret API key from environment variables
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
-
 // Define the POST handler function for the Stripe webhook
 export async function POST(req: NextRequest) {
+  // Initialize Stripe with the secret API key from environment variables
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+
   // Construct the event using the raw request body, the Stripe signature header, and the webhook secret.
   // This ensures that the request is indeed from Stripe and has not been tampered with.
   const event = await stripe.webhooks.constructEvent(

@@ -5,8 +5,6 @@ import Stripe from "stripe";
 import { getOrderById } from "@/lib/actions/order.actions";
 import { Button } from "@/components/ui/button";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
-
 export const metadata: Metadata = {
   title: "Stripe Payment Success",
 };
@@ -24,6 +22,7 @@ const SuccessPage = async (props: {
   if (!order) notFound();
 
   // Retrieve the payment intent
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
   const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
   // Check if the payment intent is valid
